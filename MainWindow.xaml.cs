@@ -38,21 +38,24 @@ namespace Test_Station_Mk1
             Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action<string>)DataPlot, data);
         }
 
-        Queue<string> displayTank = new Queue<string>();
-        Queue<string> displayComb = new Queue<string>();
-        Queue<string> displayForce = new Queue<string>();
-        Queue<string> displayTime = new Queue<string>();
+        Queue<float> displayTank = new Queue<float>();
+        Queue<float> displayComb = new Queue<float>();
+        Queue<float> displayForce = new Queue<float>();
+        Queue<float> displayTime = new Queue<float>();
         int maxQueueLen = 300;
+        float[] time, tank, comb, force;
         
 
         private void DataPlot(string data)
         {
             data.Replace("\n", "");
-            string[] content = data.Split(",");     //split the serial string on each comma (individual data) and write to corresponding content fields
+            string[] dataStrings = data.Split(",");     //split the serial string on each comma (individual data) and write to corresponding content fields
 
-            tankPrs.Content = content[0];
-            combPrs.Content = content[1];
-            loadCel.Content = content[2];
+            tankPrs.Content = dataStrings[0];
+            combPrs.Content = dataStrings[1];
+            loadCel.Content = dataStrings[2];
+
+            float[] content = Array.ConvertAll(dataStrings, float.Parse);
 
             displayTank.Enqueue(content[0]);
             displayComb.Enqueue(content[1]);
@@ -66,13 +69,21 @@ namespace Test_Station_Mk1
                 displayComb.Dequeue();
                 displayForce.Dequeue();
             }
+            time = displayTime.ToArray();   //convert string arrays to double arrays for plotting
+            tank = displayTank.ToArray();
+            comb = displayComb.ToArray();
+            force = displayForce.ToArray();
 
-            var x = Array.ConvertAll(displayTime.ToArray(),double.Parse);   //convert string arrays to double arrays for plotting
-            var y = Array.ConvertAll(displayTank.ToArray(),double.Parse);
+            tankpres.PlotOriginX = time[0];
+            tankpres.PlotWidth = time.Last() - time[0];
+            tankpres.Plot(time, tank); // x and y are IEnumerable<double>
+            combpres.PlotOriginX = time[0];
+            combpres.PlotWidth = time.Last() - time[0];
+            combpres.Plot(time, comb); // x and y are IEnumerable<double>
+            forceread.PlotOriginX = time[0];
+            forceread.PlotWidth = time.Last() - time[0];
+            forceread.Plot(time, force); // x and y are IEnumerable<double>
 
-            linegraph.PlotOriginX = x[0];
-            linegraph.PlotWidth = x.Last() - x[0];
-            linegraph.Plot(x, y); // x and y are IEnumerable<double>
         }
 
         private void Connect_Click(object sender, RoutedEventArgs e)    //COM Port connection handling
