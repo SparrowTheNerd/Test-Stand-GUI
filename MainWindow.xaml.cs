@@ -42,27 +42,26 @@ namespace Test_Station_Mk1
         Queue<float> displayComb = new Queue<float>();
         Queue<float> displayForce = new Queue<float>();
         Queue<float> displayTime = new Queue<float>();
-        int maxQueueLen = 300;
+        int maxQueueLen = 250;
         float[] time, tank, comb, force;
         
-
         private void DataPlot(string data)
         {
             data.Replace("\n", "");
             string[] dataStrings = data.Split(",");     //split the serial string on each comma (individual data) and write to corresponding content fields
 
-            tankPrs.Content = dataStrings[0];
-            combPrs.Content = dataStrings[1];
-            loadCel.Content = dataStrings[2];
+            tankPrs.Content = dataStrings[1];
+            combPrs.Content = dataStrings[2];
+            loadCel.Content = dataStrings[3];
 
             float[] content = Array.ConvertAll(dataStrings, float.Parse);
 
-            displayTank.Enqueue(content[0]);
-            displayComb.Enqueue(content[1]);
-            displayForce.Enqueue(content[2]);
-            displayTime.Enqueue(content[3]);
+            displayTime.Enqueue(content[0]);
+            displayTank.Enqueue(content[1]);
+            displayComb.Enqueue(content[2]);
+            displayForce.Enqueue(content[3]);
 
-            if (displayTime.Count == maxQueueLen)       //remove first entry when the FIFO is full
+            if (displayTime.Count >= maxQueueLen)       //remove first entry when the FIFO is full
             {
                 displayTime.Dequeue();
                 displayTank.Dequeue();

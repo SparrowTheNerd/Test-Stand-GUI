@@ -35,7 +35,7 @@
         <Label Content="Combustion Pressure: " HorizontalAlignment="Left" Margin="21,0,0,0" VerticalAlignment="Center" Height="56" Width="205"  HorizontalContentAlignment="Right" VerticalContentAlignment="Center" FontSize="18" Grid.Row="3" Grid.Column="1"/>
         <Label Content="Thrust Force: " HorizontalAlignment="Left" Margin="101,128,0,0" VerticalAlignment="Top" Height="56" Width="122"  HorizontalContentAlignment="Right"  VerticalContentAlignment="Center" FontSize="18" Grid.Row="3" Grid.Column="1"/>
 
-        <d3:Chart LeftTitle="Tank Pressure [psi]" Margin="0,0,0,0" LegendVisibility="Hidden" PlotHeight="1000" Grid.ColumnSpan="2">
+        <d3:Chart LeftTitle="Tank Pressure [psi]" Margin="0,0,0,0" LegendVisibility="Hidden" PlotHeight="950" Grid.ColumnSpan="2">
             <d3:LineGraph x:Name="tankpres" Stroke="Blue" StrokeThickness="2"/>
         </d3:Chart>
         <d3:Chart LeftTitle="Combustion Pressure [psi]" LegendVisibility="Hidden" PlotHeight="800" Grid.ColumnSpan="2" Margin="0,0,0,0" Grid.Row="1">
