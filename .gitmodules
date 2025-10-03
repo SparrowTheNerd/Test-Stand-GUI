@@ -1,0 +1,3 @@
+[submodule "examples/example_glfw_opengl3/ImPlot"]
+	path = examples/example_glfw_opengl3/ImPlot
+	url = https://github.com/epezent/implot
