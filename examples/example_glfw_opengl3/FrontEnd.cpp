@@ -99,9 +99,9 @@ namespace StandGUI
                 std::cerr << "Failed to read from COM port. Error: " << GetLastError() << std::endl;
                 CloseHandle(hCom);
             }
-            //sd:cout << bytesRead << std::endl;
-            if (bytesRead % sizeof(dataPacket) == 0 && bytesRead > 0) { //if any multiple of a packet
-                memcpy(&dataPacket, buffer, sizeof(dataPacket));
+            //std:cout << bytesRead << std::endl;
+            if (bytesRead % 20 == 0 && bytesRead > 0) { //if any multiple of a packet
+                memcpy(&dataPacket, buffer, 20);
                 t = dataPacket.timeStamp;
                 tankPr.AddPoint(t, dataPacket.tankPrs);  //add points to graph buffers
                 combPr.AddPoint(t, dataPacket.combnPrs);
@@ -114,11 +114,6 @@ namespace StandGUI
                 QDStat = dataPacket.status & 0b100;
                 armStat = dataPacket.status & 0b010;
                 ignitStat = dataPacket.status & 0b001;
-
-                /*for (int i = 0; i < sizeof(dataPacket); i++) {
-                    printf("0x%02X ", buffer[i]&0xFF);
-                }
-                std::cout << std::endl;*/
             }
             else { t += ImGui::GetIO().DeltaTime; }     //smooth out scrolling by adding frame time to the view window if no packet
         }
@@ -135,6 +130,7 @@ namespace StandGUI
         }
         if (ImGui::IsMouseDown(0) && ImGui::IsItemHovered()) {
             if (!sent && armStat) {
+                //ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.f, 0.2f, 0.2f, 0.75f));
                 auto curTime = std::chrono::high_resolution_clock::now();
                 if (curTime - holdTimer < std::chrono::seconds(1)) {
                     fireText = "3";
@@ -175,29 +171,39 @@ namespace StandGUI
                 WriteFile(hCom, buff, 1, &bytesWritten, NULL);
             }
         }
-
-        // Always center this window when appearing
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        ImGui::PopFont();
-        //ImGui::PushFont(io.Fonts->Fonts[2]);
-        if (ImGui::BeginPopupModal("Authenticate", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            if (ImGui::Button("SEND IT", ImVec2(200, 0))) {
-                if (comCon && hCom != INVALID_HANDLE_VALUE) {
-                    char buff[1] = { 'A' };
-                    DWORD bytesWritten = 0;
-                    WriteFile(hCom, buff, 1, &bytesWritten, NULL);
-                }
-                ImGui::CloseCurrentPopup();
-            }
-            if (ImGui::Button("Cancel", ImVec2(200,0))) {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-            
+        ImGui::PopFont();        
         ImGui::PopStyleColor(3);
+
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();/*
+        float valveChart = reMap(valvePerc, 0, 100, -5.f * PI / 4.f, PI/4.f);
+        float arcWidth = 35.f;
+        draw_list->PathArcTo(ImVec2((width-2*width/3)/2-100, height-350), 250.f, valveChart, -5*PI / 4.f);
+        draw_list->PathStroke(IM_COL32(255,51,51,255), ImDrawFlags_None, arcWidth);
+        draw_list->PathArcTo(ImVec2((width - 2 * width / 3) / 2 -100, height - 350), 250.f, PI/4.f, -5 * PI / 4.f);
+        draw_list->PathStroke(IM_COL32(255, 51, 51, 50), ImDrawFlags_None, arcWidth);*/
+
+        ImGui::PushFont(io.Fonts->Fonts[2]);
+        /*TextCentered("Valve Position", ImVec2((width - 2 * width / 3) / 2 -100, height - 400));
+        TextCentered(std::format("{}%%", valvePerc), ImVec2((width - 2 * width / 3) / 2 - 80, height - 350));*/
+        ImGui::SetCursorPos(ImVec2(20, height - 600));
+        if (ImGui::Button("Open Valve", ImVec2(sendItWidth * 2 / 3, sendItHeight * 2 / 3))) {
+            if (comCon && hCom != INVALID_HANDLE_VALUE) {
+                char buff[1] = { '1' };
+                DWORD bytesWritten = 0;
+                WriteFile(hCom, buff, 1, &bytesWritten, NULL);
+            }
+            else std::cout << "Open" << std::endl;
+        }
+        ImGui::SetCursorPos(ImVec2(380, height - 600));
+        if (ImGui::Button("Close Valve", ImVec2(sendItWidth * 2 / 3, sendItHeight * 2 / 3))) {
+            if (comCon && hCom != INVALID_HANDLE_VALUE) {
+                char buff[1] = { '2' };
+                DWORD bytesWritten = 0;
+                WriteFile(hCom, buff, 1, &bytesWritten, NULL);
+            }
+            else std::cout << "Close" << std::endl;
+        }
+        ImGui::PopFont();
        
 
         static ImPlotAxisFlags flags = ImPlotAxisFlags_Lock;
@@ -205,33 +211,20 @@ namespace StandGUI
 
         Graphing::plotGraph(plotHeight, ImVec2(0, 0), "Tank Pressure [lbf/in^2]", "##Tank Pressure", tankPr, width, t, 0, 1000, flags);
         Graphing::plotGraph(plotHeight, ImVec2(0, plotHeight+6), "Combustion Pressure [lbf/in^2]", "##Combustion Pressure", combPr, width, t, 0, 1000, flags);
-        Graphing::plotGraph(plotHeight, ImVec2(0, 2 * plotHeight+12), "Thrust [N]", "##Thrust", force, width, t, 0, 1000, flags);
+        Graphing::plotGraph(plotHeight, ImVec2(0, 2 * plotHeight + 12), "Thrust [N]", "##Thrust", force, width, t, 0, 1000, flags);
 
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        float valveChart = reMap(valvePerc, 0, 100, -5.f * PI / 4.f, PI/4.f);
-        float arcWidth = 35.f;
-        draw_list->PathArcTo(ImVec2((width-2*width/3)/2-100, height-350), 250.f, valveChart, -5*PI / 4.f);
-        draw_list->PathStroke(IM_COL32(255,51,51,255), ImDrawFlags_None, arcWidth);
-        draw_list->PathArcTo(ImVec2((width - 2 * width / 3) / 2 -100, height - 350), 250.f, PI/4.f, -5 * PI / 4.f);
-        draw_list->PathStroke(IM_COL32(255, 51, 51, 50), ImDrawFlags_None, arcWidth);
-
-        ImGui::PushFont(io.Fonts->Fonts[2]);
-        TextCentered("Valve Position", ImVec2((width - 2 * width / 3) / 2 -100, height - 400));
-        TextCentered(std::format("{}%%", valvePerc), ImVec2((width - 2 * width / 3) / 2 - 80, height - 350));
-        ImGui::PopFont();
-
-        draw_list->AddCircleFilled(ImVec2(width - 440, height - 452), 20.f, statusColor(QDStat));
+        //draw_list->AddCircleFilled(ImVec2(width - 440, height - 452), 20.f, statusColor(QDStat));
+        //ImGui::SetCursorPos(ImVec2(width -400, height - 500));
+        //ImGui::Text("Quick Disconnect Status");
+        draw_list->AddCircleFilled(ImVec2(width - 440, height - 452), 20.f, statusColor(armStat));
         ImGui::SetCursorPos(ImVec2(width -400, height - 500));
-        ImGui::Text("Quick Disconnect Status");
-        draw_list->AddCircleFilled(ImVec2(width - 440, height - 402), 20.f, statusColor(armStat));
-        ImGui::SetCursorPos(ImVec2(width -400, height - 450));
         ImGui::Text("Arming Status");
-        draw_list->AddCircleFilled(ImVec2(width - 440, height - 352), 20.f, statusColor(ignitStat));
-        ImGui::SetCursorPos(ImVec2(width -400, height - 400));
+        draw_list->AddCircleFilled(ImVec2(width - 440, height - 382), 20.f, statusColor(ignitStat));
+        ImGui::SetCursorPos(ImVec2(width -400, height - 420));
         ImGui::Text("Igniter Status");
 
         ImGui::SetCursorPos(ImVec2(width - 400, height - 600));
-        ImGui::Text("%d", dataPacket.rssi);
+        ImGui::Text("RSSI: %d", dataPacket.rssi);
 
         //ImGui::Begin("FPS Counter");  //display FPS in a dockable ImGUI window
         //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
